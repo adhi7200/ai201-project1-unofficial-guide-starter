@@ -3,9 +3,13 @@ chromadb>=0.6.0
 groq==0.15.0
 python-dotenv==1.0.1
 
-# Query interface — add whichever you use for Milestone 5:
-# gradio>=6.9.0
-# streamlit>=1.40.0
+# Query interface (Milestone 5)
+gradio>=6.9.0
 
-# Document ingestion — add if your documents/ folder contains .pdf files:
-# pdfplumber==0.11.4
+# Document ingestion — file-type parsers for documents/
+pdfplumber==0.11.4   # .pdf extraction (no OCR; digital PDFs only)
+pandas>=2.0          # .csv parsing (reddit posts/comments exports)
+
+# Reddit ingestion
+praw                 # Reddit API client (PRAW) for structured retrieval
+requests             # used by reddit/redditjsonretrieval.py (.json endpoint, rate-limited at 100)
