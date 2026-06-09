@@ -327,6 +327,18 @@ def chunk_text(text, chunk_size=500, overlap=75, tokenizer=None):
     return [c for c in chunks if c.strip() and _ntok(tokenizer, c) >= MIN_CHUNK_TOKENS]
 
 
+def chunk_records():
+    """Full corpus as chunk dicts ready for the vector store:
+    [{"text", "source", "chunk_index"}], where chunk_index is the chunk's
+    position within its source document. Used by build_index.py."""
+    tokenizer = _get_tokenizer()
+    out = []
+    for rec in load_documents():
+        for j, ch in enumerate(chunk_text(rec["text"], tokenizer=tokenizer)):
+            out.append({"text": ch, "source": rec["source"], "chunk_index": j})
+    return out
+
+
 # =========================================================================
 # Dev/verification harness
 # =========================================================================
