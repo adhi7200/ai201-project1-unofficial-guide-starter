@@ -88,12 +88,16 @@ Campus Survival Guide: This will be a compilation of all the ins and niche secre
 
 | # | Question | Expected answer |
 |---|----------|-----------------|
-| 1 | What do students say about wait times at Dining Hall West during lunch? | Long waits at rush hour (e.g. 12–1pm, 6–7pm); students recommend going before noon or after 1:30. |
-| 2 | Which professor should I take for BIO 2311 at UTD? | Amy Jo (MacBey) Gomez — cited for positive reviews, clear lectures, and/or fair exams/grading. |
+| 1 | What majors are recommended for premed? | List majors most relevant to biology, chemistry and life sciences; Biology, Chemistry, Biochemistry; Neuroscience  |
+| 2 | Which professor should I take for BIO 2312 at UTD? | Zhuoru (Amy) Wu — cited for positive reviews, clear lectures, and/or fair exams/grading. |
 | 3 | How do UTD pre-med students typically get clinical hours in Dallas? | UT Southwestern volunteering, Parkland Hospital volunteering, UTD Health Center, and other entry-level work in a local clinical environment. |
 | 4 | What are the unwritten rules for finding parking on campus without a permit? | Lot-specific tips (free after 7pm, visitor lots, etc.) from student posts. |
 | 5 | What GPA do students say you need to be taken seriously by UTD pre-health advising? | ~3.5+ mentioned in Reddit threads; HPAC office expectations. |
 
+
+*Notes:* 
+ - **updated Q1 to ask a topical question since the corpus did not contain enough info to answer the original question**
+ - **updated Q2 since the corpus offered more info to fit this question**
 ---
 
 ## Anticipated Challenges

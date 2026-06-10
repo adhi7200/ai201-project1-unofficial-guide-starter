@@ -23,11 +23,14 @@ def handle_query(question):
     return result["answer"], sources
 
 
+# The four eval questions that return grounded, cited answers (Q1–Q4).
+# Q5 (GPA) is intentionally omitted — it triggers a refusal and is documented as a
+# failure case; type it live in the demo to show the refusal behavior.
 EXAMPLES = [
-    "Which professor should I take for BIO 2311 at UTD?",
-    "How do UTD pre-med students get clinical hours in Dallas?",
-    "Can I park on campus without buying a permit?",
-    "What GPA do students say pre-health advising expects?",
+    "What majors are recommended for premed?",
+    "Which professor should I take for BIO 2312 at UTD?",
+    "How do UTD pre-med students typically get clinical hours in Dallas?",
+    "What are the unwritten rules for finding parking on campus without a permit?",
 ]
 
 with gr.Blocks(title="The Unofficial Guide — UT Dallas") as demo:

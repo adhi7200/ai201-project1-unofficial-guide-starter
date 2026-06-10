@@ -14,8 +14,8 @@ from embed_store import embed_texts, get_collection
 # The 5 evaluation questions from planning.md (questions only — we judge
 # retrieval relevance by inspection, not against the expected answers).
 EVAL_QUERIES = [
-    "What do students say about wait times at Dining Hall West during lunch?",
-    "Which professor should I take for BIO 2311 at UTD?",
+    "What majors are recommended for premed?",
+    "Which professor should I take for BIO 2312 at UTD?",
     "How do UTD pre-med students typically get clinical hours in Dallas?",
     "What are the unwritten rules for finding parking on campus without a permit?",
     "What GPA do students say you need to be taken seriously by UTD pre-health advising?",

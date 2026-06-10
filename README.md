@@ -1,5 +1,7 @@
 # The Unofficial Guide — Project 1
 
+**Navigating UT Dallas norms as a new student-- There are many policies and traditions specific to this university that are not public knowledge and must be passed on from student to student. This is a solution to ease that transfer of knowledge down generations of students at the University of Texas at Dallas**
+
 A Retrieval-Augmented Generation (RAG) system that answers plain-language
 questions about UT Dallas using real student-generated knowledge — Reddit
 threads, Rate My Professors reviews, and official advising documents — and
@@ -199,18 +201,19 @@ does not apply here). Relevance is judged by score *separation* plus inspection:
 strong matches score ≈27–29, weak/tangential matches ≈18–22. Reproduce with
 `python retrieve.py`.
 
-### Query A — "Which professor should I take for BIO 2311 at UTD?"
+### Query A — "Which professor should I take for BIO 2312 at UTD?"
 | Rank | Score | Source | Chunk |
 |---|---|---|---|
-| 1 | 29.5 | `subreddit_posts…#1siuxmm` | "Biology lab at UTD Help!! Which one should I pick BIOL 2281 1106 1107?" |
-| 2 | 28.4 | `RMP Reviews combined.txt` | "She gives so many chances for extra credit… Take this class!!!! … BIOL2312" |
+| 1 | 29.9 | `subreddit_posts…#1siuxmm` | "Biology lab at UTD Help!! Which one should I pick BIOL 2281 1106 1107?" |
+| 2 | 29.1 | `RMP Reviews combined.txt` | "She gives so many chances for extra credit… Take this class!!!! … BIOL2312" (Dr. Wu) |
 | 3 | 27.8 | `subreddit_posts…#1t5j1g0` | "Biology 2311 Help … (eberhard voit). If I wanted to switch out … which prof would be better for my GPA…" |
 
 **Why these are relevant:** all three center on choosing a *biology* professor at
-UTD. Result #3 is almost the exact question — a student asking which BIOL 2311
-professor to take to protect their GPA — and #2 is a concrete Rate My Professors
-review of a bio professor with grading detail. The system correctly pulled from
-*both* the Reddit (peer opinion) and RMP (review) sources that hold this answer.
+UTD. Result #2 is a concrete Rate My Professors review of Dr. Wu for BIOL 2312 —
+the exact professor the question is about — with grading/extra-credit detail, and
+#1/#3 are Reddit posts about choosing among bio professors. The system correctly
+pulled from *both* the Reddit (peer opinion) and RMP (review) sources that hold
+this answer.
 
 ### Query B — "How do UTD pre-med students typically get clinical hours in Dallas?"
 | Rank | Score | Source | Chunk |
@@ -237,11 +240,11 @@ by parking on neighborhood streets and whether you'll be ticketed — and the ot
 are on-topic parking complaints/logistics. All come from the Reddit post corpus
 where this kind of unofficial advice lives.
 
-> **Note (a retrieval limitation to revisit):** the 5th eval query, "wait times at
-> Dining Hall West during lunch," retrieves only tangential food/dining posts
-> (top score ≈21). The corpus simply contains no discussion of dining-hall wait
-> times, so retrieval surfaces the nearest neighbors rather than a true answer.
-> This is a content-coverage gap, not a retrieval bug — see Failure Case Analysis.
+> **Note on score magnitudes:** well-covered topics (professors, clinical hours)
+> score ≈27–30; thinner topics (parking, GPA) top out ≈22–23 because the matching
+> chunks are shorter/noisier. Score separation, not an absolute threshold, is the
+> useful relevance signal here — see the Failure Case Analysis for a query where a
+> retrieved-but-loosely-phrased chunk still led the model to refuse.
 
 ---
 
@@ -349,49 +352,56 @@ Retrieved from:
 
 ## Evaluation Report
 
-<!-- Milestone 6 — all 5 questions with expected answers, system responses,
-     accuracy judgments. -->
+All 5 questions run through `ask()` (Groq `llama-3.3-70b-versatile`, `temperature=0`,
+k=5). Reproduce with `python query.py "<question>"`. Result: **1 accurate, 3
+partially accurate, 1 inaccurate** — a realistic spread that exposes real limits.
 
-| # | Question | Expected answer | System response (summarized) | Retrieval quality | Response accuracy |
-|---|----------|-----------------|------------------------------|-------------------|-------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| # | Question | Expected answer | System response (summarized) | Retrieval | Accuracy |
+|---|----------|-----------------|------------------------------|-----------|----------|
+| 1 | What majors are recommended for premed? | Bio, Chemistry, Biochemistry, Neuroscience | Names Biomedical Sciences, Neuroscience, Biochemistry, Biology (from student posts); flags CISTech as a poor fit. Cited 4 Reddit posts + Pre-health PDF. | Partially relevant (anecdotal posts, ~22) | **Partially accurate** — captures Neuro/Biochem/Bio but misses Chemistry; from individual posts, not an authoritative list |
+| 2 | Which professor should I take for BIO 2312 at UTD? | Zhuoru (Amy) Wu | Correctly identifies and cites **Dr. Wu** (RMP) as highly recommended, then hedges that she isn't in a current-schedule post it also retrieved, and appends the refusal string. | Relevant (RMP Wu reviews, ~29–30) | **Partially accurate** — surfaces and cites the right professor, but the appended refusal contradicts its own answer |
+| 3 | How do UTD pre-med students typically get clinical hours in Dallas? | UT Southwestern, Parkland, UTD Health Center volunteering | Parkland Hospital Clinical Experience, UT Southwestern programs (SURF/SMDEP), Molding Doctors volunteering; cited Pre-health PDF. | Relevant (~24–27) | **Accurate** — names Parkland + UT Southwestern + a student org, all cited (minor research/clinical conflation) |
+| 4 | Unwritten rules for parking on campus without a permit? | Lot-specific tips (free after 7pm, visitor lots, etc.) | Parking on neighborhood streets (Lookout Dr/Bull Run) with risk of ticket/tow; pay-by-space meters. Cited Reddit posts. | Relevant (~22–23) | **Partially accurate** — conveys real student workarounds, but lacks the specific "free after 7pm / visitor lot" tips (not in the corpus) |
+| 5 | What GPA do students say you need to be taken seriously by UTD pre-health advising? | ~3.5+; HPAC expectations | "I don't have enough information on that." (refusal) — **despite** retrieving the Pre-health PDF tiers "GPA >3.8 ~80% admitted" and "GPA >3.5 ~30% admitted". | Relevant but mis-framed (PDF GPA tiers at #4–5, ~21) | **Inaccurate** — the answer was in the retrieved context but the model over-refused (see Failure 1) |
 
 ---
 
 ## Failure Case Analysis
 
-Three distinct failure cases surfaced, each tied to a specific pipeline stage.
-(Full evaluation-table results are in the Evaluation Report — Milestone 6.)
+Three distinct failure cases surfaced, each tied to a *different* pipeline stage —
+generation, generation/retrieval interaction, and ingestion.
 
-### Failure 1 — Content-coverage gap (ingestion / corpus): "Dining Hall West wait times"
-**Question:** "What do students say about wait times at Dining Hall West during lunch?"
+### Failure 1 — Generation over-refusal (generation stage): Q5, GPA for pre-health advising
+**Question:** "What GPA do students say you need to be taken seriously by UTD pre-health advising?"
 **What the system returned:** *"I don't have enough information on that."* (refusal).
-**Root cause — ingestion/corpus coverage, not retrieval or generation.** The corpus
-contains no posts discussing dining-hall wait times. Retrieval therefore returns
-only tangential food/dining posts (a food-access survey, "eating in the library",
-power-outage posts) with notably lower similarity (top dot-product ≈21 vs ≈27–29
-for well-covered topics), and generation correctly declines rather than inventing
-an answer. The failure is that the source documents never covered this subtopic.
-**Fix:** collect dining-specific sources (a dining-hall megathread, Yelp/Google
-reviews of campus dining) so the subtopic is represented before queries hit it.
+**Root cause — generation, not retrieval.** This is the subtle one: the answer
+*was* in the retrieved context. The top-5 chunks included the Pre-health PDF
+admission tiers "Study Skills GPA >3.8 … ~80% admitted" (rank 4) and "GPA > 3.5 or
+positive recent trend … ~30% admitted" (rank 5). But the question is framed as
+"GPA to be *taken seriously by advising*," while those chunks are framed as
+*med-school admission competency tiers*. The strict grounding prompt — the same
+rule that correctly refuses out-of-scope questions — judged the lexical/semantic
+match insufficient and refused, even though a human would connect ">3.5/>3.8" to
+the answer. Precision (no hallucination) was traded for recall (a missed answer).
+**Fix:** soften the grounding instruction to permit reasonable inference from
+clearly on-topic context; add a re-ranking step; or split the dense PDF
+"competency tier" chunk so the GPA numbers stand on their own and match more
+strongly.
 
-### Failure 2 — Questions without answers (ingestion structure / retrieval): "BIO 2311 professor"
-**Question:** "Which professor should I take for BIO 2311 at UTD?"
-**What the system returned:** *"I don't have enough information on that."* (refusal),
-despite *topically* relevant retrieval (scores 27–29).
-**Root cause — corpus structure at the ingestion stage.** `subreddit_posts.csv`
-stores each post's *body* (the question) but **not its comment replies**, and the
-separately-ingested comment threads cover other topics. So for this query
-retrieval surfaces students *asking* which professor to take, plus a tangential
-BIOL2312 RMP review — but no chunk actually *names or recommends* a BIOL 2311
-professor. Grounding then forces a refusal instead of a fabricated recommendation.
-The retrieval is on-topic; the answer-bearing text was simply never ingested.
-**Fix:** ingest the comment replies for these posts (the answers live there), raise
-top-k, or build a professor-name → review index from the RMP file.
+### Failure 2 — Self-contradicting answer (generation + mixed retrieval): Q2, BIO 2312 professor
+**Question:** "Which professor should I take for BIO 2312 at UTD?"
+**What the system returned:** it correctly named and cited **Dr. Wu** (RMP) as
+highly recommended — then hedged that she wasn't among the professors in a
+*current-schedule* Reddit post it also retrieved, and appended the refusal string,
+contradicting its own answer.
+**Root cause — generation reasoning on mixed-signal retrieval.** Retrieval pulled
+the right answer (RMP Wu reviews, score ≈29) *and* a Reddit post listing different
+currently-offered professors. The model conflated "recommend a professor" with
+"choose among the profs in this schedule post," so it both answered and refused.
+The retrieval was correct; the generation step failed to reconcile two relevant
+but differently-scoped chunks.
+**Fix:** instruct the model to prefer review/recommendation sources over
+question/schedule posts, or de-duplicate "question-shaped" chunks at retrieval time.
 
 ### Failure 3 — Garbled PDF extraction (ingestion / PDF parsing): Housing Megathread
 **Affected source:** `Housing Megathread - Fall Semester _ r_utdallas.pdf`.
@@ -410,12 +420,25 @@ x-gaps to split on). ~1% of the 1196 chunks are affected.
 
 ## Spec Reflection
 
-<!-- Milestone 6 — one way the spec helped, one way the implementation diverged
-     and why. -->
+**One way the spec helped you during implementation.** Writing the Retrieval
+Approach section *before* coding forced an early, decisive choice that prevented a
+silent bug. The spec called for 400–500-token chunks, and reasoning through it
+surfaced that the assignment's default `all-MiniLM-L6-v2` only embeds 256 tokens —
+so it would have truncated the back half of every chunk without any error. Because
+the spec had already committed to a concrete chunk size, the fix was obvious:
+switch to `multi-qa-mpnet-base-dot-v1` (512-token window, dot-product, QA-tuned).
+The spec turned a would-be hidden failure into a design decision made up front.
 
-**One way the spec helped you during implementation:**
-
-**One way your implementation diverged from the spec, and why:**
+**One way your implementation diverged from the spec, and why.** The spec described
+chunking and retrieval at a high level but didn't anticipate how *noisy* the real
+documents would be once ingested. The implementation diverged by adding a whole
+layer the plan never mentioned: per-source cleaning (web-print PDF headers/footers/
+nav/ads, Reddit markdown and escaped characters, `[removed]`/`[deleted]` comments,
+RMP UI scaffolding) and treating each CSV row as its own record. I also diverged on
+the evaluation metric — the assignment assumes cosine "distance < 0.5," but because
+multi-qa-mpnet is a dot-product model I report dot-product *similarity* (higher =
+better) instead. Both divergences came from contact with the actual data, which is
+exactly the kind of thing a spec can't fully predict.
 
 ---
 
@@ -427,12 +450,18 @@ x-gaps to split on). ~1% of the 1196 chunks are affected.
 
 **Instance 1**
 
-- *What I gave the AI:*
-- *What it produced:*
-- *What I changed or overrode:*
+- *What I gave the AI:* My chunking strategy spec (500 token chunks, 75 overlap, medium size paragraph chunking)
+- *What it produced:* It suggested I should switch to a more robust embedding model (**multi-qa-mpnet-base-dot-v1** with token size 512) to fit these chunks then built a ingest.py script that filtered each type of doc(.pdf, .md, .txt, .cvs) in a very organized fashion, with separate versatile sections for cleaning, customized chunking and a suite of quality tests for data integrity.
+- *What I changed or overrode:* I had to include some further checks to denoise the advertising and marketing that inevitably interweaved in the Reddit forums. But testing the random chunks, I received data with good fidelity. I would've liked to incorporate more documentation and sources to provide a more diverse database but manual extraction took a lot of time already and I did not want to play with live scraping scripts for this project. Also had to incorporate a 12 char minimum to remove noise from "thank you" or other noise in public forums.
 
 **Instance 2**
 
-- *What I gave the AI:*
-- *What it produced:*
-- *What I changed or overrode:*
+- *What I gave the AI:* Provided my Generation/Interface strategy and Milestone # 5/6 instructions to ensure a complete UI
+- *What it produced:* It produced generate.py, query.py and a main app script to process the query, call the Groq API and provide a Gradio interface for simple UI interaction. Then it compiled points of failure for the report, ground truth evaluation output and a couple refusal examples.
+- *What I changed or overrode:* I had to edit my evaluation questions to fit my corpus and document the lack of info to answer these questions in my failure section. I also added suggested questions based on the evaluation questions to help with the UX.
+
+**Instance 3**
+
+- *What I gave the AI:* Polish my planning.md (strictly grammar) and fill out the first half of the README based on planning.md and unit tests carried throughout the process of building the pipeline.
+- *What it produced:* Produced a ultra clean README documenting different parts of the process. It shows all the required aspects per the rubric in a clean format.
+- *What I changed or overrode:* I had to edit the reasoning and content across the document to offer more insight or change the voice so my thoughts are included and not the AI's insights alone.
